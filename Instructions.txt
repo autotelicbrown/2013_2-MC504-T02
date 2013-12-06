@@ -1,0 +1,38 @@
+  For each file necessary to create the new syscall, I'll list in which folder
+it goes according the linux 3.12 kernel directory structure and if it is a
+entirely new file or just a modification of pre-existing file. I also briefly
+describe what each file (or corresponding modification) is supposed to do.
+
+File: syscalls.h - Modification
+Path: linux-3.12/include/linux/syscalls.h
+  Added a line to the header with all the kernel syscalls with our new
+syscall sys_mkuniquedir prototype.
+
+File: syscall_32.tbl - Modification
+Path: linux-3.12/arch/x86/syscalls/syscall_32.tlb
+  Added a line in the syscall table with our new syscall after the last existing
+position, making the new syscall the number 351.
+
+File: mkuniquedir.c - New file
+Path: linux-3.12/arch/x86/kernel/mkuniquedir.c
+  The actual syscall implementation. This syscall basically is an extension of
+the mkdir syscall that attaches the program pid to the user chosen directory
+name. This creates a suffix that makes the directory created in each program
+execution unique within a fixed prefix chosen by the user.
+  The implementation consists of taking the string from user space, processing
+it to add the pid suffix and then calling the mkdir syscall with that new
+string. To make the mkdir syscall work properly with a kernel allocated string,
+we temporarily change the assigned user memory space to also include the
+kernel memory space, so that mkdir does not complain about working with a
+kernel allocated string. That is immediately reversed after calling mkdir.
+
+File: Makefile - Modification
+Path: linux-3.12/arch/x86/kernel/Makefile
+  Added a new line to compile our new 'mkuniquedir.c' file to its binary output
+'mkuniquedir.o' which has the implementation for our sys_mkuniquedir prototype.
+
+  Although it's not related to the syscall implementation, we also added the
+executable ex-mkuniquedir which was compiled for the i386 architecture that
+exemplifies our new syscall. Its usage: ./ex-mkuniquedir [directory_prefix]
+  NOTE: Only run that executable in a virtual machine environment as it was
+generated with an online compiler and may not be entirely safe.
